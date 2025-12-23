@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Also Up - Easy Lasers</title>
+    <title>Also Up - Skins Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; user-select: none; -webkit-user-select: none; }
         canvas { display: block; margin: 0 auto; background: #020205; touch-action: none; }
@@ -11,6 +11,12 @@
             position: fixed; top: 15px; width: 100%; text-align: center;
             color: #0ff; font-size: 26px; font-weight: bold; pointer-events: none;
             text-shadow: 0 0 15px #0ff; z-index: 5;
+        }
+        #coinCount {
+            position: fixed; top: 15px; left: 15px;
+            color: #ffcc00; font-size: 24px; font-weight: bold;
+            text-shadow: 0 0 10px #ffcc00; z-index: 5;
+            pointer-events: none;
         }
         .controls-container {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -34,27 +40,88 @@
             position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             color: white; z-index: 100; text-align: center;
+            padding: 20px;
         }
         .btn {
             background: #0ff; color: #000; border: none; padding: 15px 50px;
             font-size: 20px; font-weight: bold; border-radius: 10px; cursor: pointer;
             box-shadow: 0 0 20px #0ff; margin-top: 20px;
+            transition: 0.2s;
+        }
+        .btn:hover {
+            box-shadow: 0 0 30px #0ff;
+            transform: translateY(-2px);
+        }
+        #skinsMenu {
+            display: none;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            max-width: 400px;
+        }
+        .skin-item {
+            width: 80px; height: 80px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            flex-direction: column;
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            position: relative;
+            background-color: rgba(255, 255, 255, 0.05);
+            transition: 0.1s;
+        }
+        .skin-item:hover {
+            transform: scale(1.05);
+            border-color: #0ff;
+            box-shadow: 0 0 10px #0ff;
+        }
+        .skin-color {
+            width: 40px; height: 40px;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            border: 1px solid rgba(0,0,0,0.2);
+        }
+        .skin-price {
+            position: absolute;
+            bottom: 5px; right: 5px;
+            font-size: 12px;
+            color: #ffcc00;
+        }
+        .skin-selected {
+            border-color: #0ff;
+            box-shadow: 0 0 15px #0ff;
+        }
+        .skin-owned {
+            background-color: rgba(0, 255, 0, 0.1);
+            border-color: #0f0;
+        }
+        #mainMenuButtons {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
     </style>
 </head>
 <body>
 
 <div id="ui">ВЫСОТА: <span id="height">0</span>m</div>
+<div id="coinCount">МОНЕТЫ: <span id="coins">0</span></div>
 
 <div id="menu">
     <h1 style="color:#0ff; margin:0">ALSO UP</h1>
-    <button class="btn" onclick="startGame()">ИГРАТЬ</button>
-</div>
 
-<div class="controls-container">
-    <div class="ctrl-zone" id="leftBtn">←</div>
-    <div class="ctrl-zone" id="rightBtn">→</div>
-    <div class="ctrl-zone" id="jumpBtn">↑</div>
+    <div id="mainMenuButtons">
+        <button class="btn" onclick="startGame()">ИГРАТЬ</button>
+        <button class="btn" onclick="showSkins()">СКИНЫ</button>
+    </div>
+
+    <div id="skinsMenu">
+        </div>
+    <button class="btn" id="backBtn" style="display:none; margin-top: 30px;" onclick="showMainMenu()">НАЗАД</button>
 </div>
 
 <canvas id="game"></canvas>
@@ -63,10 +130,14 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const heightEl = document.getElementById('height');
+const coinsEl = document.getElementById('coins');
 const menu = document.getElementById('menu');
+const mainMenuButtons = document.getElementById('mainMenuButtons');
+const skinsMenu = document.getElementById('skinsMenu');
+const backBtn = document.getElementById('backBtn');
 
 let gameActive = false;
-let score = 0, platforms = [], lasers = [], animationId, frameCount = 0;
+let score = 0, platforms = [], coins = [], animationId, frameCount = 0;
 let worldW = 0;
 
 const player = { 
@@ -77,6 +148,29 @@ const player = {
 
 const camera = { y: 0, lerp: 0.1 };
 const keys = { left: false, right: false };
+
+let playerCoins = parseInt(localStorage.getItem('playerCoins') || '0');
+let selectedSkin = localStorage.getItem('selectedSkin') || '#fff';
+let ownedSkins = JSON.parse(localStorage.getItem('ownedSkins') || '["#fff"]');
+
+const skins = [
+    { id: 'white', color: '#fff', price: 0 },
+    { id: 'red', color: '#ff0055', price: 10 },
+    { id: 'blue', color: '#0055ff', price: 20 },
+    { id: 'green', color: '#00ff55', price: 30 },
+    { id: 'purple', color: '#a000ff', price: 50 },
+    { id: 'gold', color: '#ffd700', price: 100 }
+];
+
+function saveGameData() {
+    localStorage.setItem('playerCoins', playerCoins.toString());
+    localStorage.setItem('selectedSkin', selectedSkin);
+    localStorage.setItem('ownedSkins', JSON.stringify(ownedSkins));
+}
+
+function updateCoinDisplay() {
+    coinsEl.innerText = playerCoins;
+}
 
 function setupControl(id, action) {
     const el = document.getElementById(id);
@@ -129,10 +223,13 @@ function spawnPlatform() {
     
     platforms.push(platform);
 
-    if (score > 300 && Math.random() < 0.12) {
-        lasers.push({
-            y: platform.y - hDiff / 2,
-            offset: Math.random() * 100 // Чтобы лазеры работали вразнобой
+    // Спавн монет
+    if (Math.random() < 0.3 + (score / 5000)) { // Шанс появления монеты увеличивается с высотой
+        coins.push({
+            x: platform.x + platform.w / 2,
+            y: platform.y - 30, // Над платформой
+            size: 10,
+            collected: false
         });
     }
 }
@@ -151,7 +248,7 @@ function startGame() {
     player.vx = player.vy = 0;
     score = 0; camera.y = 0; heightEl.innerText = "0";
     platforms = [{ x: 0, y: canvas.height - 40, w: worldW, h: 100, type: 'static', spring: null }];
-    lasers = [];
+    coins = [];
     for(let i=0; i<20; i++) spawnPlatform();
     gameActive = true; menu.style.display = 'none';
     gameLoop();
@@ -188,18 +285,19 @@ function update() {
         }
     }
     
-    // Облегченная коллизия с лазерами
-    for (let l of lasers) {
-        // Лазер опасен только когда синус > 0.5 (примерно 30% времени)
-        let intensity = Math.sin((frameCount + l.offset) * 0.05);
-        let isDangerous = intensity > 0.5;
-        
-        if (isDangerous && player.y < l.y + 2 && player.y + player.h > l.y - 2) {
-            gameOver();
-            return;
+    // Коллизия с монетами
+    coins.forEach(c => {
+        if (!c.collected && 
+            player.x < c.x + c.size && player.x + player.w > c.x - c.size &&
+            player.y < c.y + c.size && player.y + player.h > c.y - c.size) {
+            
+            c.collected = true;
+            playerCoins++;
+            updateCoinDisplay();
+            saveGameData();
         }
-    }
-    
+    });
+
     platforms.forEach(p => {
         if(p.type === 'moving') { 
             p.x += p.dir * p.speed; 
@@ -212,7 +310,7 @@ function update() {
     if(platforms[platforms.length-1].y > camera.y - 600) spawnPlatform();
     
     if(platforms.length > 50) platforms.shift();
-    lasers = lasers.filter(l => l.y < camera.y + canvas.height + 100);
+    coins = coins.filter(c => !c.collected && c.y < camera.y + canvas.height + 100);
     
     let curH = Math.floor((canvas.height - 150 - player.y) / 10);
     if(curH > score) { score = curH; heightEl.innerText = score; }
@@ -222,26 +320,6 @@ function update() {
 function draw() {
     ctx.fillStyle = '#020205'; ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.save(); ctx.translate(0, -camera.y);
-    
-    lasers.forEach(l => {
-        let intensity = Math.sin((frameCount + l.offset) * 0.05);
-        let isDangerous = intensity > 0.5;
-        
-        if (isDangerous) {
-            ctx.strokeStyle = `rgba(255, 0, 0, ${0.5 + intensity * 0.5})`;
-            ctx.shadowBlur = 10; ctx.shadowColor = 'red';
-            ctx.lineWidth = 2;
-        } else {
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)'; // Почти невидимый, когда безопасен
-            ctx.shadowBlur = 0;
-            ctx.lineWidth = 1;
-        }
-        
-        ctx.beginPath();
-        ctx.moveTo(0, l.y);
-        ctx.lineTo(worldW, l.y);
-        ctx.stroke();
-    });
     
     platforms.forEach(p => {
         let color = p.type === 'static' ? '#0ff' : (p.type === 'moving' ? '#ff0' : `rgba(255, 0, 85, ${p.alpha})`);
@@ -255,8 +333,21 @@ function draw() {
             ctx.fillRect(p.x + p.spring.x, p.y - p.spring.h, p.spring.w, p.spring.h);
         }
     });
+
+    // Отрисовка монет
+    coins.forEach(c => {
+        if (!c.collected) {
+            ctx.fillStyle = '#ffcc00';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ffcc00';
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    });
     
-    ctx.fillStyle = '#fff'; ctx.shadowBlur = 15; ctx.shadowColor = '#fff';
+    ctx.fillStyle = selectedSkin; // Используем выбранный скин
+    ctx.shadowBlur = 15; ctx.shadowColor = selectedSkin;
     ctx.fillRect(player.x, player.y, player.w, player.h);
     ctx.restore();
 }
@@ -264,11 +355,16 @@ function draw() {
 function gameOver() {
     gameActive = false; cancelAnimationFrame(animationId);
     menu.style.display = 'flex';
-    menu.innerHTML = `<h1 style="color:#ff0055">ЛИКВИДИРОВАН!</h1><p style="font-size:24px">Высота: ${score}m</p><button class="btn" onclick="startGame()">РЕСТАРТ</button>`;
+    menu.innerHTML = `<h1 style="color:#ff0055">УПАЛ!</h1><p style="font-size:24px">Высота: ${score}m</p><p style="font-size:20px">Собрано монет: ${playerCoins}</p><button class="btn" onclick="startGame()">РЕСТАРТ</button><button class="btn" onclick="showSkins()">СКИНЫ</button>`;
 }
 
-function gameLoop() { if(!gameActive) return; update(); draw(); animationId = requestAnimationFrame(gameLoop); }
-window.addEventListener('resize', () => { if(gameActive) resize(); });
-</script>
-</body>
-</html>
+function gameLoop() { 
+    if(!gameActive) {
+        // Если игра не активна, но кнопка СТАРТ нажата, начать игру
+        // Это предотвращает многократные запуски анимации при открытом меню
+        if (menu.style.display === 'none') {
+            startGame();
+            return;
+        }
+    }
+    update

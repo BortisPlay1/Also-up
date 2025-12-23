@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Up: Pro 2025</title>
+    <title>Also Up</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; user-select: none; -webkit-user-select: none; }
         canvas { display: block; margin: 0 auto; background: #020205; touch-action: none; }
@@ -47,7 +47,7 @@
 <div id="ui">ВЫСОТА: <span id="height">0</span>m</div>
 
 <div id="menu">
-    <h1 style="color:#0ff; margin:0">NEON UP</h1>
+    <h1 style="color:#0ff; margin:0">ALSO UP</h1>
     <p>Барьеры активны для баланса</p>
     <button class="btn" onclick="startGame()">ИГРАТЬ</button>
 </div>
@@ -68,7 +68,7 @@ const menu = document.getElementById('menu');
 
 let gameActive = false;
 let score = 0, platforms = [], animationId;
-let worldW = 0; // Ширина игровой зоны (барьера)
+let worldW = 0;
 
 const player = { 
     x: 0, y: 0, w: 22, h: 22, 
@@ -111,7 +111,6 @@ const w = Math.max(50, 100 - (score / 200));
 
 function resize() {
     canvas.height = window.innerHeight;
-    // Ограничиваем ширину игровой зоны (максимум 500px для баланса как в вертикальном режиме)
     worldW = Math.min(window.innerWidth, 500);
     canvas.width = worldW;
 }
@@ -138,7 +137,6 @@ function update() {
 
     player.vy += player.gravity; player.x += player.vx; player.y += player.vy;
 
-    // Барьеры вместо бесконечного экрана (чтобы не вылетать за пределы зоны)
     if(player.x < 0) { player.x = 0; player.vx = 0; }
     if(player.x + player.w > worldW) { player.x = worldW - player.w; player.vx = 0; }
 
@@ -173,7 +171,6 @@ function update() {
 function draw() {
     ctx.fillStyle = '#020205'; ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Рисуем границы барьера (боковые линии)
     ctx.strokeStyle = 'rgba(0, 255, 255, 0.2)';
     ctx.lineWidth = 4;
     ctx.strokeRect(0, 0, canvas.width, canvas.height);

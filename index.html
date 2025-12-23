@@ -37,6 +37,9 @@
             font-size: 20px; font-weight: bold; border-radius: 10px; cursor: pointer;
             box-shadow: 0 0 20px #0ff; margin-top: 20px;
         }
+        @media (pointer: fine) {
+            .controls-container { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -86,6 +89,21 @@ function setupControl(id, action) {
 setupControl('leftBtn', v => keys.left = v);
 setupControl('rightBtn', v => keys.right = v);
 setupControl('jumpBtn', v => { if(v && player.grounded) { player.vy = player.jump; player.grounded = false; } });
+
+window.addEventListener('keydown', (e) => {
+    if (!gameActive) return;
+    if (e.code === 'ArrowLeft') keys.left = true;
+    if (e.code === 'ArrowRight') keys.right = true;
+    if ((e.code === 'ArrowUp' || e.code === 'Space') && player.grounded) {
+        player.vy = player.jump;
+        player.grounded = false;
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    if (e.code === 'ArrowLeft') keys.left = false;
+    if (e.code === 'ArrowRight') keys.right = false;
+});
 
 function spawnPlatform() {
     const lastY = platforms.length > 0 ? platforms[platforms.length-1].y : canvas.height;
@@ -176,7 +194,7 @@ function draw() {
 function gameOver() {
     gameActive = false; cancelAnimationFrame(animationId);
     menu.style.display = 'flex';
-    menu.innerHTML = `<h1>УПАЛ!</h1><p>Высота: ${score}m</p><button class="btn" onclick="startGame()">РЕСТАРТ</button>`;
+    menu.innerHTML = `<h1 style="color:#ff0055">УПАЛ!</h1><p style="font-size:24px">Высота: ${score}m</p><button class="btn" onclick="startGame()">РЕСТАРТ</button>`;
 }
 
 function gameLoop() { if(!gameActive) return; update(); draw(); animationId = requestAnimationFrame(gameLoop); }

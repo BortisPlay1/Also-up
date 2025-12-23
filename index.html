@@ -18,6 +18,9 @@
             display: flex; justify-content: space-around; padding: 0 10px;
             box-sizing: border-box; z-index: 50;
         }
+        @media (pointer: fine) {
+            .controls-container { display: none !important; }
+        }
         .ctrl-zone {
             flex: 1; margin: 0 5px; background: rgba(255, 255, 255, 0.1);
             border: 2px solid rgba(0, 255, 255, 0.3); border-radius: 15px;
@@ -36,9 +39,6 @@
             background: #0ff; color: #000; border: none; padding: 15px 50px;
             font-size: 20px; font-weight: bold; border-radius: 10px; cursor: pointer;
             box-shadow: 0 0 20px #0ff; margin-top: 20px;
-        }
-        @media (pointer: fine) {
-            .controls-container { display: none; }
         }
     </style>
 </head>
@@ -107,19 +107,27 @@ window.addEventListener('keyup', (e) => {
 
 function spawnPlatform() {
     const lastY = platforms.length > 0 ? platforms[platforms.length-1].y : canvas.height;
-    const hDiff = 110 + Math.random() * 40; 
+    const hDiff = 110 + Math.random() * 45; 
     const diff = Math.min(score / 10000, 0.7);
     const typeRoll = Math.random();
     let type = typeRoll < diff ? (typeRoll < diff * 0.3 ? 'disappearing' : 'moving') : 'static';
-    const w = Math.max(50, 100 - (score / 200));
-    platforms.push({ 
+    const w = Math.max(50, 100 - (score / 250));
+    
+    let platform = { 
         x: Math.random() * (worldW - w), 
         y: lastY - hDiff, 
         w, h: 12, type, 
         dir: Math.random() > 0.5 ? 1 : -1, 
-        speed: 1.5 + (score / 2000), 
-        alpha: 1, touched: false 
-    });
+        speed: 1.5 + (score / 2500), 
+        alpha: 1, touched: false,
+        spring: null
+    };
+
+    if (type === 'static' && Math.random() < 0.2) {
+        platform.spring = { x: Math.random() * (w - 20), w: 20, h: 10 };
+    }
+    
+    platforms.push(platform);
 }
 
 function resize() {
@@ -135,7 +143,7 @@ function startGame() {
     player.y = canvas.height - 150; 
     player.vx = player.vy = 0;
     score = 0; camera.y = 0; heightEl.innerText = "0";
-    platforms = [{ x: 0, y: canvas.height - 40, w: worldW, h: 100, type: 'static' }];
+    platforms = [{ x: 0, y: canvas.height - 40, w: worldW, h: 100, type: 'static', spring: null }];
     for(let i=0; i<20; i++) spawnPlatform();
     gameActive = true; menu.style.display = 'none';
     gameLoop();
@@ -147,18 +155,28 @@ function update() {
     else if(keys.right) player.vx = player.speed; 
     else player.vx *= player.friction;
     player.vy += player.gravity; player.x += player.vx; player.y += player.vy;
+    
     if(player.x < 0) { player.x = 0; player.vx = 0; }
     if(player.x + player.w > worldW) { player.x = worldW - player.w; player.vx = 0; }
+    
     player.grounded = false;
     if(player.vy > 0) {
         for(let p of platforms) {
             if(player.x < p.x + p.w && player.x + player.w > p.x && 
                player.y + player.h >= p.y && player.y + player.h <= p.y + p.h + player.vy) {
+                
+                if (p.spring && player.x + player.w > p.x + p.spring.x && player.x < p.x + p.spring.x + p.spring.w) {
+                    player.vy = player.jump * 1.8;
+                    player.grounded = false;
+                    break;
+                }
+
                 if (p.type === 'disappearing') p.touched = true;
                 player.y = p.y - player.h; player.vy = 0; player.grounded = true; break;
             }
         }
     }
+    
     platforms.forEach(p => {
         if(p.type === 'moving') { 
             p.x += p.dir * p.speed; 
@@ -166,9 +184,11 @@ function update() {
         }
         if(p.touched && p.type === 'disappearing') { p.alpha -= 0.04; if(p.alpha <= 0) p.y = -9999; }
     });
+    
     if(player.y < camera.y + canvas.height * 0.5) camera.y += (player.y - canvas.height * 0.5 - camera.y) * camera.lerp;
-    if(platforms[platforms.length-1].y > camera.y - 500) spawnPlatform();
+    if(platforms[platforms.length-1].y > camera.y - 600) spawnPlatform();
     if(platforms.length > 50) platforms.shift();
+    
     let curH = Math.floor((canvas.height - 150 - player.y) / 10);
     if(curH > score) { score = curH; heightEl.innerText = score; }
     if(player.y > camera.y + canvas.height + 200) gameOver();
@@ -176,16 +196,21 @@ function update() {
 
 function draw() {
     ctx.fillStyle = '#020205'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = 'rgba(0, 255, 255, 0.2)';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(0, 0, canvas.width, canvas.height);
     ctx.save(); ctx.translate(0, -camera.y);
+    
     platforms.forEach(p => {
         let color = p.type === 'static' ? '#0ff' : (p.type === 'moving' ? '#ff0' : `rgba(255, 0, 85, ${p.alpha})`);
         ctx.fillStyle = color;
         ctx.shadowBlur = 10; ctx.shadowColor = color;
         ctx.fillRect(p.x, p.y, p.w, p.h);
+        
+        if (p.spring) {
+            ctx.fillStyle = '#0f8';
+            ctx.shadowColor = '#0f8';
+            ctx.fillRect(p.x + p.spring.x, p.y - p.spring.h, p.spring.w, p.spring.h);
+        }
     });
+    
     ctx.fillStyle = '#fff'; ctx.shadowBlur = 15; ctx.shadowColor = '#fff';
     ctx.fillRect(player.x, player.y, player.w, player.h);
     ctx.restore();
@@ -198,7 +223,6 @@ function gameOver() {
 }
 
 function gameLoop() { if(!gameActive) return; update(); draw(); animationId = requestAnimationFrame(gameLoop); }
-
 window.addEventListener('resize', () => { if(gameActive) resize(); });
 </script>
 </body>

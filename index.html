@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Also Up - Skins Edition</title>
+    <title>Also Up - Skins & Coins</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; user-select: none; -webkit-user-select: none; }
         canvas { display: block; margin: 0 auto; background: #020205; touch-action: none; }
+        
         #ui {
             position: fixed; top: 15px; width: 100%; text-align: center;
             color: #0ff; font-size: 26px; font-weight: bold; pointer-events: none;
@@ -16,112 +17,72 @@
             position: fixed; top: 15px; left: 15px;
             color: #ffcc00; font-size: 24px; font-weight: bold;
             text-shadow: 0 0 10px #ffcc00; z-index: 5;
-            pointer-events: none;
         }
+
+        /* Кнопки для телефона */
         .controls-container {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
             width: 100%; max-width: 600px; height: 90px;
             display: flex; justify-content: space-around; padding: 0 10px;
             box-sizing: border-box; z-index: 50;
         }
-        @media (pointer: fine) {
-            .controls-container { display: none !important; }
-        }
+        @media (pointer: fine) { .controls-container { display: none !important; } }
+        
         .ctrl-zone {
             flex: 1; margin: 0 5px; background: rgba(255, 255, 255, 0.1);
             border: 2px solid rgba(0, 255, 255, 0.3); border-radius: 15px;
             display: flex; align-items: center; justify-content: center;
             font-size: 35px; color: #0ff; backdrop-filter: blur(5px);
-            -webkit-tap-highlight-color: transparent; transition: 0.1s;
         }
-        .ctrl-zone:active { background: rgba(0, 255, 255, 0.3); transform: scale(0.95); }
-        #jumpBtn { border-color: rgba(255, 0, 85, 0.5); color: #ff0055; }
+
+        /* Меню */
         #menu {
-            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95);
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             color: white; z-index: 100; text-align: center;
-            padding: 20px;
         }
         .btn {
-            background: #0ff; color: #000; border: none; padding: 15px 50px;
+            background: #0ff; color: #000; border: none; padding: 15px 40px;
             font-size: 20px; font-weight: bold; border-radius: 10px; cursor: pointer;
-            box-shadow: 0 0 20px #0ff; margin-top: 20px;
-            transition: 0.2s;
+            box-shadow: 0 0 15px #0ff; margin: 10px; width: 200px;
         }
-        .btn:hover {
-            box-shadow: 0 0 30px #0ff;
-            transform: translateY(-2px);
-        }
-        #skinsMenu {
-            display: none;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-            max-width: 400px;
+        
+        #skinsGrid {
+            display: none; flex-wrap: wrap; justify-content: center; gap: 10px;
+            max-width: 300px; margin: 20px 0;
         }
         .skin-item {
-            width: 80px; height: 80px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-            cursor: pointer;
-            display: flex; justify-content: center; align-items: center;
-            flex-direction: column;
-            font-size: 14px;
-            font-weight: bold;
-            color: #fff;
-            position: relative;
-            background-color: rgba(255, 255, 255, 0.05);
-            transition: 0.1s;
+            width: 70px; height: 70px; border: 2px solid #444; border-radius: 10px;
+            cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: #111; position: relative;
         }
-        .skin-item:hover {
-            transform: scale(1.05);
-            border-color: #0ff;
-            box-shadow: 0 0 10px #0ff;
-        }
-        .skin-color {
-            width: 40px; height: 40px;
-            border-radius: 5px;
-            margin-bottom: 5px;
-            border: 1px solid rgba(0,0,0,0.2);
-        }
-        .skin-price {
-            position: absolute;
-            bottom: 5px; right: 5px;
-            font-size: 12px;
-            color: #ffcc00;
-        }
-        .skin-selected {
-            border-color: #0ff;
-            box-shadow: 0 0 15px #0ff;
-        }
-        .skin-owned {
-            background-color: rgba(0, 255, 0, 0.1);
-            border-color: #0f0;
-        }
-        #mainMenuButtons {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+        .skin-item.owned { border-color: #0f0; }
+        .skin-item.selected { border-color: #fff; box-shadow: 0 0 10px #fff; }
+        .skin-preview { width: 30px; height: 30px; margin-bottom: 5px; }
+        .price { font-size: 12px; color: #ffcc00; }
     </style>
 </head>
 <body>
 
 <div id="ui">ВЫСОТА: <span id="height">0</span>m</div>
-<div id="coinCount">МОНЕТЫ: <span id="coins">0</span></div>
+<div id="coinCount">💰 <span id="coinsDisplay">0</span></div>
 
 <div id="menu">
-    <h1 style="color:#0ff; margin:0">ALSO UP</h1>
-
-    <div id="mainMenuButtons">
-        <button class="btn" onclick="startGame()">ИГРАТЬ</button>
-        <button class="btn" onclick="showSkins()">СКИНЫ</button>
+    <h1 id="menuTitle" style="color:#0ff; margin-bottom:20px;">ALSO UP</h1>
+    
+    <div id="mainButtons">
+        <button class="btn" onclick="startGame()">ИГРАТЬ</button><br>
+        <button class="btn" onclick="openSkins()">СКИНЫ</button>
     </div>
 
-    <div id="skinsMenu">
-        </div>
-    <button class="btn" id="backBtn" style="display:none; margin-top: 30px;" onclick="showMainMenu()">НАЗАД</button>
+    <div id="skinsGrid"></div>
+    <button id="backBtn" class="btn" style="display:none" onclick="showMain()">НАЗАД</button>
+</div>
+
+<div class="controls-container">
+    <div class="ctrl-zone" id="leftBtn">←</div>
+    <div class="ctrl-zone" id="rightBtn">→</div>
+    <div class="ctrl-zone" id="jumpBtn">↑</div>
 </div>
 
 <canvas id="game"></canvas>
@@ -130,241 +91,192 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const heightEl = document.getElementById('height');
-const coinsEl = document.getElementById('coins');
-const menu = document.getElementById('menu');
-const mainMenuButtons = document.getElementById('mainMenuButtons');
-const skinsMenu = document.getElementById('skinsMenu');
-const backBtn = document.getElementById('backBtn');
+const coinsDisplay = document.getElementById('coinsDisplay');
 
-let gameActive = false;
-let score = 0, platforms = [], coins = [], animationId, frameCount = 0;
-let worldW = 0;
+// Данные игрока
+let playerCoins = parseInt(localStorage.getItem('up_coins') || '0');
+let ownedSkins = JSON.parse(localStorage.getItem('up_owned') || '["#fff"]');
+let selectedColor = localStorage.getItem('up_color') || '#fff';
 
-const player = { 
-    x: 0, y: 0, w: 22, h: 22, 
-    vx: 0, vy: 0, speed: 7, jump: -15, 
-    gravity: 0.55, friction: 0.85, grounded: false 
-};
+const skins = [
+    { color: '#fff', price: 0 },
+    { color: '#ff0055', price: 15 },
+    { color: '#00ff55', price: 30 },
+    { color: '#0055ff', price: 50 },
+    { color: '#ffd700', price: 100 },
+    { color: '#a000ff', price: 150 }
+];
 
+// Состояние игры
+let gameActive = false, score = 0, platforms = [], collectibleCoins = [], animationId;
+const player = { x: 0, y: 0, w: 22, h: 22, vx: 0, vy: 0, speed: 7, jump: -15, gravity: 0.55, friction: 0.85, grounded: false };
 const camera = { y: 0, lerp: 0.1 };
 const keys = { left: false, right: false };
 
-let playerCoins = parseInt(localStorage.getItem('playerCoins') || '0');
-let selectedSkin = localStorage.getItem('selectedSkin') || '#fff';
-let ownedSkins = JSON.parse(localStorage.getItem('ownedSkins') || '["#fff"]');
-
-const skins = [
-    { id: 'white', color: '#fff', price: 0 },
-    { id: 'red', color: '#ff0055', price: 10 },
-    { id: 'blue', color: '#0055ff', price: 20 },
-    { id: 'green', color: '#00ff55', price: 30 },
-    { id: 'purple', color: '#a000ff', price: 50 },
-    { id: 'gold', color: '#ffd700', price: 100 }
-];
-
-function saveGameData() {
-    localStorage.setItem('playerCoins', playerCoins.toString());
-    localStorage.setItem('selectedSkin', selectedSkin);
-    localStorage.setItem('ownedSkins', JSON.stringify(ownedSkins));
+function updateData() {
+    coinsDisplay.innerText = playerCoins;
+    localStorage.setItem('up_coins', playerCoins);
+    localStorage.setItem('up_owned', JSON.stringify(ownedSkins));
+    localStorage.setItem('up_color', selectedColor);
 }
 
-function updateCoinDisplay() {
-    coinsEl.innerText = playerCoins;
-}
-
-function setupControl(id, action) {
+// Управление
+const setupBtn = (id, act) => {
     const el = document.getElementById(id);
-    const start = (e) => { e.preventDefault(); action(true); };
-    const end = (e) => { e.preventDefault(); action(false); };
-    el.addEventListener('touchstart', start); el.addEventListener('touchend', end);
-    el.addEventListener('mousedown', start); el.addEventListener('mouseup', end);
-}
+    el.onmousedown = el.ontouchstart = (e) => { e.preventDefault(); act(true); };
+    el.onmouseup = el.ontouchend = (e) => { e.preventDefault(); act(false); };
+};
+setupBtn('leftBtn', v => keys.left = v);
+setupBtn('rightBtn', v => keys.right = v);
+setupBtn('jumpBtn', v => { if(v && player.grounded) { player.vy = player.jump; player.grounded = false; } });
 
-setupControl('leftBtn', v => keys.left = v);
-setupControl('rightBtn', v => keys.right = v);
-setupControl('jumpBtn', v => { if(v && player.grounded) { player.vy = player.jump; player.grounded = false; } });
+window.onkeydown = (e) => {
+    if(e.code === 'ArrowLeft') keys.left = true;
+    if(e.code === 'ArrowRight') keys.right = true;
+    if((e.code === 'ArrowUp' || e.code === 'Space') && player.grounded) { player.vy = player.jump; player.grounded = false; }
+};
+window.onkeyup = (e) => {
+    if(e.code === 'ArrowLeft') keys.left = false;
+    if(e.code === 'ArrowRight') keys.right = false;
+};
 
-window.addEventListener('keydown', (e) => {
-    if (!gameActive) return;
-    if (e.code === 'ArrowLeft') keys.left = true;
-    if (e.code === 'ArrowRight') keys.right = true;
-    if ((e.code === 'ArrowUp' || e.code === 'Space') && player.grounded) {
-        player.vy = player.jump;
-        player.grounded = false;
-    }
-});
-
-window.addEventListener('keyup', (e) => {
-    if (e.code === 'ArrowLeft') keys.left = false;
-    if (e.code === 'ArrowRight') keys.right = false;
-});
-
-function spawnPlatform() {
+// Логика игры
+function spawn() {
     const lastY = platforms.length > 0 ? platforms[platforms.length-1].y : canvas.height;
-    const hDiff = 110 + Math.random() * 45; 
-    const diff = Math.min(score / 10000, 0.7);
-    const typeRoll = Math.random();
-    let type = typeRoll < diff ? (typeRoll < diff * 0.3 ? 'disappearing' : 'moving') : 'static';
-    const w = Math.max(50, 100 - (score / 250));
+    const h = 110 + Math.random() * 50;
+    const w = Math.max(50, 100 - (score / 200));
+    const type = Math.random() > 0.8 ? (Math.random() > 0.5 ? 'moving' : 'disappearing') : 'static';
     
-    let platform = { 
-        x: Math.random() * (worldW - w), 
-        y: lastY - hDiff, 
-        w, h: 12, type, 
-        dir: Math.random() > 0.5 ? 1 : -1, 
-        speed: 1.5 + (score / 2500), 
-        alpha: 1, touched: false,
-        spring: null
-    };
+    let p = { x: Math.random()*(canvas.width-w), y: lastY-h, w, h: 12, type, dir: 1, speed: 2, alpha: 1, spring: Math.random() < 0.15 };
+    platforms.push(p);
 
-    if (type === 'static' && Math.random() < 0.2) {
-        platform.spring = { x: Math.random() * (w - 20), w: 20, h: 10 };
+    if(Math.random() > 0.6) {
+        collectibleCoins.push({ x: p.x + p.w/2, y: p.y - 30, r: 8 });
     }
-    
-    platforms.push(platform);
-
-    // Спавн монет
-    if (Math.random() < 0.3 + (score / 5000)) { // Шанс появления монеты увеличивается с высотой
-        coins.push({
-            x: platform.x + platform.w / 2,
-            y: platform.y - 30, // Над платформой
-            size: 10,
-            collected: false
-        });
-    }
-}
-
-function resize() {
-    canvas.height = window.innerHeight;
-    worldW = Math.min(window.innerWidth, 500);
-    canvas.width = worldW;
 }
 
 function startGame() {
-    if (animationId) cancelAnimationFrame(animationId);
-    resize();
-    player.x = worldW / 2; 
-    player.y = canvas.height - 150; 
-    player.vx = player.vy = 0;
-    score = 0; camera.y = 0; heightEl.innerText = "0";
-    platforms = [{ x: 0, y: canvas.height - 40, w: worldW, h: 100, type: 'static', spring: null }];
-    coins = [];
-    for(let i=0; i<20; i++) spawnPlatform();
-    gameActive = true; menu.style.display = 'none';
-    gameLoop();
+    gameActive = true;
+    document.getElementById('menu').style.display = 'none';
+    canvas.width = Math.min(window.innerWidth, 500);
+    canvas.height = window.innerHeight;
+    player.x = canvas.width/2; player.y = canvas.height - 150;
+    player.vx = player.vy = score = camera.y = 0;
+    platforms = [{ x: 0, y: canvas.height - 40, w: canvas.width, h: 100, type: 'static' }];
+    collectibleCoins = [];
+    for(let i=0; i<20; i++) spawn();
+    loop();
 }
 
-function update() {
+function loop() {
     if(!gameActive) return;
-    frameCount++;
     
-    if(keys.left) player.vx = -player.speed; 
-    else if(keys.right) player.vx = player.speed; 
+    // Физика
+    if(keys.left) player.vx = -player.speed;
+    else if(keys.right) player.vx = player.speed;
     else player.vx *= player.friction;
     
-    player.vy += player.gravity; player.x += player.vx; player.y += player.vy;
-    
-    if(player.x < 0) { player.x = 0; player.vx = 0; }
-    if(player.x + player.w > worldW) { player.x = worldW - player.w; player.vx = 0; }
-    
+    player.vy += player.gravity;
+    player.x += player.vx;
+    player.y += player.vy;
+
+    if(player.x < 0) player.x = 0;
+    if(player.x > canvas.width - player.w) player.x = canvas.width - player.w;
+
     player.grounded = false;
     if(player.vy > 0) {
-        for(let p of platforms) {
-            if(player.x < p.x + p.w && player.x + player.w > p.x && 
-               player.y + player.h >= p.y && player.y + player.h <= p.y + p.h + player.vy) {
-                
-                if (p.spring && player.x + player.w > p.x + p.spring.x && player.x < p.x + p.spring.x + p.spring.w) {
-                    player.vy = player.jump * 1.8;
-                    player.grounded = false;
-                    break;
+        platforms.forEach(p => {
+            if(player.x < p.x + p.w && player.x + player.w > p.x && player.y + player.h >= p.y && player.y + player.h <= p.y + p.h + player.vy) {
+                if(p.spring) { player.vy = player.jump * 1.8; }
+                else {
+                    player.y = p.y - player.h; player.vy = 0; player.grounded = true;
+                    if(p.type === 'disappearing') p.touched = true;
                 }
-
-                if (p.type === 'disappearing') p.touched = true;
-                player.y = p.y - player.h; player.vy = 0; player.grounded = true; break;
             }
-        }
+        });
     }
-    
-    // Коллизия с монетами
-    coins.forEach(c => {
-        if (!c.collected && 
-            player.x < c.x + c.size && player.x + player.w > c.x - c.size &&
-            player.y < c.y + c.size && player.y + player.h > c.y - c.size) {
-            
-            c.collected = true;
-            playerCoins++;
-            updateCoinDisplay();
-            saveGameData();
-        }
+
+    // Монеты
+    collectibleCoins = collectibleCoins.filter(c => {
+        const dist = Math.hypot(player.x + 11 - c.x, player.y + 11 - c.y);
+        if(dist < 25) { playerCoins++; updateData(); return false; }
+        return c.y < camera.y + canvas.height + 100;
     });
 
     platforms.forEach(p => {
-        if(p.type === 'moving') { 
-            p.x += p.dir * p.speed; 
-            if(p.x <= 0 || p.x + p.w >= worldW) p.dir *= -1; 
-        }
-        if(p.touched && p.type === 'disappearing') { p.alpha -= 0.04; if(p.alpha <= 0) p.y = -9999; }
+        if(p.type === 'moving') { p.x += p.dir * p.speed; if(p.x <= 0 || p.x + p.w >= canvas.width) p.dir *= -1; }
+        if(p.touched) p.alpha -= 0.05;
     });
-    
-    if(player.y < camera.y + canvas.height * 0.5) camera.y += (player.y - canvas.height * 0.5 - camera.y) * camera.lerp;
-    if(platforms[platforms.length-1].y > camera.y - 600) spawnPlatform();
-    
-    if(platforms.length > 50) platforms.shift();
-    coins = coins.filter(c => !c.collected && c.y < camera.y + canvas.height + 100);
-    
-    let curH = Math.floor((canvas.height - 150 - player.y) / 10);
-    if(curH > score) { score = curH; heightEl.innerText = score; }
-    if(player.y > camera.y + canvas.height + 200) gameOver();
-}
 
-function draw() {
-    ctx.fillStyle = '#020205'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if(player.y < camera.y + canvas.height/2) camera.y += (player.y - canvas.height/2 - camera.y) * 0.1;
+    if(platforms[platforms.length-1].y > camera.y - 500) spawn();
+    if(player.y > camera.y + canvas.height + 100) {
+        gameActive = false;
+        document.getElementById('menu').style.display = 'flex';
+        document.getElementById('menuTitle').innerText = "ВЫСОТА: " + score + "m";
+    }
+
+    score = Math.max(score, Math.floor((canvas.height - 150 - player.y)/10));
+    heightEl.innerText = score;
+
+    // Отрисовка
+    ctx.fillStyle = '#020205'; ctx.fillRect(0,0,canvas.width, canvas.height);
     ctx.save(); ctx.translate(0, -camera.y);
     
     platforms.forEach(p => {
-        let color = p.type === 'static' ? '#0ff' : (p.type === 'moving' ? '#ff0' : `rgba(255, 0, 85, ${p.alpha})`);
-        ctx.fillStyle = color;
-        ctx.shadowBlur = 10; ctx.shadowColor = color;
+        if(p.alpha <= 0) return;
+        ctx.fillStyle = p.type === 'static' ? '#0ff' : (p.type === 'moving' ? '#ff0' : `rgba(255,0,85,${p.alpha})`);
         ctx.fillRect(p.x, p.y, p.w, p.h);
-        
-        if (p.spring) {
-            ctx.fillStyle = '#0f8';
-            ctx.shadowColor = '#0f8';
-            ctx.fillRect(p.x + p.spring.x, p.y - p.spring.h, p.spring.w, p.spring.h);
-        }
+        if(p.spring) { ctx.fillStyle = '#0f8'; ctx.fillRect(p.x + p.w/2 - 10, p.y - 8, 20, 8); }
     });
 
-    // Отрисовка монет
-    coins.forEach(c => {
-        if (!c.collected) {
-            ctx.fillStyle = '#ffcc00';
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#ffcc00';
-            ctx.beginPath();
-            ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
-            ctx.fill();
-        }
+    collectibleCoins.forEach(c => {
+        ctx.fillStyle = '#ffcc00'; ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI*2); ctx.fill();
     });
-    
-    ctx.fillStyle = selectedSkin; // Используем выбранный скин
-    ctx.shadowBlur = 15; ctx.shadowColor = selectedSkin;
+
+    ctx.fillStyle = selectedColor; ctx.shadowBlur = 15; ctx.shadowColor = selectedColor;
     ctx.fillRect(player.x, player.y, player.w, player.h);
     ctx.restore();
+
+    animationId = requestAnimationFrame(loop);
 }
 
-function gameOver() {
-    gameActive = false; cancelAnimationFrame(animationId);
-    menu.style.display = 'flex';
-    menu.innerHTML = `<h1 style="color:#ff0055">УПАЛ!</h1><p style="font-size:24px">Высота: ${score}m</p><p style="font-size:20px">Собрано монет: ${playerCoins}</p><button class="btn" onclick="startGame()">РЕСТАРТ</button><button class="btn" onclick="showSkins()">СКИНЫ</button>`;
+// Функции меню
+function openSkins() {
+    document.getElementById('mainButtons').style.display = 'none';
+    const grid = document.getElementById('skinsGrid');
+    grid.style.display = 'flex';
+    document.getElementById('backBtn').style.display = 'block';
+    grid.innerHTML = '';
+    
+    skins.forEach(s => {
+        const isOwned = ownedSkins.includes(s.color);
+        const div = document.createElement('div');
+        div.className = `skin-item ${isOwned ? 'owned' : ''} ${selectedColor === s.color ? 'selected' : ''}`;
+        div.innerHTML = `<div class="skin-preview" style="background:${s.color}"></div>
+                         <div class="price">${isOwned ? 'OK' : s.price}</div>`;
+        div.onclick = () => {
+            if(isOwned) { selectedColor = s.color; }
+            else if(playerCoins >= s.price) {
+                playerCoins -= s.price;
+                ownedSkins.push(s.color);
+                selectedColor = s.color;
+            }
+            updateData();
+            openSkins();
+        };
+        grid.appendChild(div);
+    });
 }
 
-function gameLoop() { 
-    if(!gameActive) {
-        // Если игра не активна, но кнопка СТАРТ нажата, начать игру
-        // Это предотвращает многократные запуски анимации при открытом меню
-        if (menu.style.display === 'none') {
-            startGame();
-            return;
-        }
-    }
-    update
+function showMain() {
+    document.getElementById('mainButtons').style.display = 'block';
+    document.getElementById('skinsGrid').style.display = 'none';
+    document.getElementById('backBtn').style.display = 'none';
+    document.getElementById('menuTitle').innerText = "ALSO UP";
+}
+
+updateData();
+</script>
+</body>
+</html>

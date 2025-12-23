@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Also Up -</title>
+    <title>Also Up - Easy Lasers</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; user-select: none; -webkit-user-select: none; }
         canvas { display: block; margin: 0 auto; background: #020205; touch-action: none; }
@@ -129,12 +129,10 @@ function spawnPlatform() {
     
     platforms.push(platform);
 
-    // Спавн лазеров после 200м
-    if (score > 200 && Math.random() < 0.15 + (score / 10000)) {
+    if (score > 300 && Math.random() < 0.12) {
         lasers.push({
             y: platform.y - hDiff / 2,
-            active: true,
-            timer: 0
+            offset: Math.random() * 100 // Чтобы лазеры работали вразнобой
         });
     }
 }
@@ -190,10 +188,13 @@ function update() {
         }
     }
     
-    // Коллизия с лазерами
+    // Облегченная коллизия с лазерами
     for (let l of lasers) {
-        let blink = Math.sin(frameCount * 0.2) > 0;
-        if (blink && player.y < l.y + 4 && player.y + player.h > l.y - 4) {
+        // Лазер опасен только когда синус > 0.5 (примерно 30% времени)
+        let intensity = Math.sin((frameCount + l.offset) * 0.05);
+        let isDangerous = intensity > 0.5;
+        
+        if (isDangerous && player.y < l.y + 2 && player.y + player.h > l.y - 2) {
             gameOver();
             return;
         }
@@ -210,7 +211,6 @@ function update() {
     if(player.y < camera.y + canvas.height * 0.5) camera.y += (player.y - canvas.height * 0.5 - camera.y) * camera.lerp;
     if(platforms[platforms.length-1].y > camera.y - 600) spawnPlatform();
     
-    // Очистка старых объектов
     if(platforms.length > 50) platforms.shift();
     lasers = lasers.filter(l => l.y < camera.y + canvas.height + 100);
     
@@ -223,24 +223,26 @@ function draw() {
     ctx.fillStyle = '#020205'; ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.save(); ctx.translate(0, -camera.y);
     
-    // Отрисовка лазеров
     lasers.forEach(l => {
-        let opacity = 0.3 + Math.abs(Math.sin(frameCount * 0.2)) * 0.7;
-        ctx.strokeStyle = `rgba(255, 0, 0, ${opacity})`;
-        ctx.lineWidth = 3;
-        ctx.shadowBlur = 15; ctx.shadowColor = 'red';
+        let intensity = Math.sin((frameCount + l.offset) * 0.05);
+        let isDangerous = intensity > 0.5;
+        
+        if (isDangerous) {
+            ctx.strokeStyle = `rgba(255, 0, 0, ${0.5 + intensity * 0.5})`;
+            ctx.shadowBlur = 10; ctx.shadowColor = 'red';
+            ctx.lineWidth = 2;
+        } else {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)'; // Почти невидимый, когда безопасен
+            ctx.shadowBlur = 0;
+            ctx.lineWidth = 1;
+        }
+        
         ctx.beginPath();
         ctx.moveTo(0, l.y);
         ctx.lineTo(worldW, l.y);
         ctx.stroke();
-        
-        // Точки излучатели по бокам
-        ctx.fillStyle = 'red';
-        ctx.fillRect(0, l.y-5, 5, 10);
-        ctx.fillRect(worldW-5, l.y-5, 5, 10);
     });
     
-    // Отрисовка платформ
     platforms.forEach(p => {
         let color = p.type === 'static' ? '#0ff' : (p.type === 'moving' ? '#ff0' : `rgba(255, 0, 85, ${p.alpha})`);
         ctx.fillStyle = color;

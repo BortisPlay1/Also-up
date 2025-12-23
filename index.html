@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Up: Pro 2025</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; user-select: none; -webkit-user-select: none; }
+        canvas { display: block; margin: 0 auto; background: #020205; touch-action: none; }
+        
+        #ui {
+            position: fixed; top: 15px; width: 100%; text-align: center;
+            color: #0ff; font-size: 26px; font-weight: bold; pointer-events: none;
+            text-shadow: 0 0 15px #0ff; z-index: 5;
+        }
+
+        .controls-container {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 100%; max-width: 600px; height: 90px;
+            display: flex; justify-content: space-around; padding: 0 10px;
+            box-sizing: border-box; z-index: 50;
+        }
+        .ctrl-zone {
+            flex: 1; margin: 0 5px; background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(0, 255, 255, 0.3); border-radius: 15px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 35px; color: #0ff; backdrop-filter: blur(5px);
+            -webkit-tap-highlight-color: transparent; transition: 0.1s;
+        }
+        .ctrl-zone:active { background: rgba(0, 255, 255, 0.3); transform: scale(0.95); }
+        #jumpBtn { border-color: rgba(255, 0, 85, 0.5); color: #ff0055; }
+
+        #menu {
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; z-index: 100; text-align: center;
+        }
+        .btn {
+            background: #0ff; color: #000; border: none; padding: 15px 50px;
+            font-size: 20px; font-weight: bold; border-radius: 10px; cursor: pointer;
+            box-shadow: 0 0 20px #0ff; margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="ui">ВЫСОТА: <span id="height">0</span>m</div>
+
+<div id="menu">
+    <h1 style="color:#0ff; margin:0">NEON UP</h1>
+    <p>Барьеры активны для баланса</p>
+    <button class="btn" onclick="startGame()">ИГРАТЬ</button>
+</div>
+
+<div class="controls-container">
+    <div class="ctrl-zone" id="leftBtn">←</div>
+    <div class="ctrl-zone" id="rightBtn">→</div>
+    <div class="ctrl-zone" id="jumpBtn">↑</div>
+</div>
+
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const heightEl = document.getElementById('height');
+const menu = document.getElementById('menu');
+
+let gameActive = false;
+let score = 0, platforms = [], animationId;
+let worldW = 0; // Ширина игровой зоны (барьера)
+
+const player = { 
+    x: 0, y: 0, w: 22, h: 22, 
+    vx: 0, vy: 0, speed: 7, jump: -15, 
+    gravity: 0.55, friction: 0.85, grounded: false 
+};
+
+const camera = { y: 0, lerp: 0.1 };
+const keys = { left: false, right: false };
+
+function setupControl(id, action) {
+    const el = document.getElementById(id);
+    const start = (e) => { e.preventDefault(); action(true); };
+    const end = (e) => { e.preventDefault(); action(false); };
+    el.addEventListener('touchstart', start); el.addEventListener('touchend', end);
+    el.addEventListener('mousedown', start); el.addEventListener('mouseup', end);
+}
+
+setupControl('leftBtn', v => keys.left = v);
+setupControl('rightBtn', v => keys.right = v);
+setupControl('jumpBtn', v => { if(v && player.grounded) { player.vy = player.jump; player.grounded = false; } });
+
+function spawnPlatform() {
+    const lastY = platforms.length > 0 ? platforms[platforms.length-1].y : canvas.height;
+    const hDiff = 110 + Math.random() * 40; 
+    const diff = Math.min(score / 10000, 0.7);
+    const typeRoll = Math.random();
+    let type = typeRoll < diff ? (typeRoll < diff * 0.3 ? 'disappearing' : 'moving') : 'static';
+
+const w = Math.max(50, 100 - (score / 200));
+    platforms.push({ 
+        x: Math.random() * (worldW - w), 
+        y: lastY - hDiff, 
+        w, h: 12, type, 
+        dir: Math.random() > 0.5 ? 1 : -1, 
+        speed: 1.5 + (score / 2000), 
+        alpha: 1, touched: false 
+    });
+}
+
+function resize() {
+    canvas.height = window.innerHeight;
+    // Ограничиваем ширину игровой зоны (максимум 500px для баланса как в вертикальном режиме)
+    worldW = Math.min(window.innerWidth, 500);
+    canvas.width = worldW;
+}
+
+function startGame() {
+    cancelAnimationFrame(animationId);
+    resize();
+    player.x = worldW / 2; 
+    player.y = canvas.height - 150; 
+    player.vx = player.vy = 0;
+    score = 0; camera.y = 0; heightEl.innerText = "0";
+    platforms = [{ x: 0, y: canvas.height - 40, w: worldW, h: 100, type: 'static' }];
+    for(let i=0; i<20; i++) spawnPlatform();
+    gameActive = true; menu.style.display = 'none';
+    gameLoop();
+}
+
+function update() {
+    if(!gameActive) return;
+
+    if(keys.left) player.vx = -player.speed; 
+    else if(keys.right) player.vx = player.speed; 
+    else player.vx *= player.friction;
+
+    player.vy += player.gravity; player.x += player.vx; player.y += player.vy;
+
+    // Барьеры вместо бесконечного экрана (чтобы не вылетать за пределы зоны)
+    if(player.x < 0) { player.x = 0; player.vx = 0; }
+    if(player.x + player.w > worldW) { player.x = worldW - player.w; player.vx = 0; }
+
+    player.grounded = false;
+    if(player.vy > 0) {
+        for(let p of platforms) {
+            if(player.x < p.x + p.w && player.x + player.w > p.x && 
+               player.y + player.h >= p.y && player.y + player.h <= p.y + p.h + player.vy) {
+                if (p.type === 'disappearing') p.touched = true;
+                player.y = p.y - player.h; player.vy = 0; player.grounded = true; break;
+            }
+        }
+    }
+
+    platforms.forEach(p => {
+        if(p.type === 'moving') { 
+            p.x += p.dir * p.speed; 
+            if(p.x <= 0 || p.x + p.w >= worldW) p.dir *= -1; 
+        }
+        if(p.touched && p.type === 'disappearing') { p.alpha -= 0.04; if(p.alpha <= 0) p.y = -9999; }
+    });
+
+    if(player.y < camera.y + canvas.height * 0.5) camera.y += (player.y - canvas.height * 0.5 - camera.y) * camera.lerp;
+    if(platforms[platforms.length-1].y > camera.y - 500) spawnPlatform();
+    if(platforms.length > 50) platforms.shift();
+
+    let curH = Math.floor((canvas.height - 150 - player.y) / 10);
+    if(curH > score) { score = curH; heightEl.innerText = score; }
+    if(player.y > camera.y + canvas.height + 200) gameOver();
+}
+
+function draw() {
+    ctx.fillStyle = '#020205'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Рисуем границы барьера (боковые линии)
+    ctx.strokeStyle = 'rgba(0, 255, 255, 0.2)';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save(); ctx.translate(0, -camera.y);
+    platforms.forEach(p => {
+        ctx.fillStyle = p.type === 'static' ? '#0ff' : (p.type === 'moving' ? '#ff0' : rgba(255, 0, 85, ${p.alpha}));
+        ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle;
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+    });
+    ctx.fillStyle = '#fff'; ctx.shadowBlur = 15; ctx.shadowColor = '#fff';
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+    ctx.restore();
+}
+
+function gameOver() {
+    gameActive = false; cancelAnimationFrame(animationId);
+    menu.style.display = 'flex';
+    menu.innerHTML = <h1>УПАЛ!</h1><p>Высота: ${score}m</p><button class="btn" onclick="startGame()">РЕСТАРТ</button>;
+}
+
+function gameLoop() { if(!gameActive) return; update(); draw(); animationId = requestAnimationFrame(gameLoop); }
+
+window.addEventListener('resize', () => { if(gameActive) resize(); });
+</script>
+</body>
+  </html>

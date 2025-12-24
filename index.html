@@ -8,54 +8,45 @@
         body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; user-select: none; -webkit-user-select: none; }
         canvas { display: block; margin: 0 auto; background: #020205; touch-action: none; }
         
-        #ui {
-            position: fixed; top: 15px; width: 100%; text-align: center;
-            color: #0ff; font-size: 26px; font-weight: bold; pointer-events: none;
-            text-shadow: 0 0 15px #0ff; z-index: 5;
+        #ui { position: fixed; top: 15px; width: 100%; text-align: center; color: #0ff; font-size: 26px; font-weight: bold; pointer-events: none; text-shadow: 0 0 15px #0ff; z-index: 5; }
+        #coinCount { position: fixed; top: 15px; left: 15px; color: #ffcc00; font-size: 24px; font-weight: bold; text-shadow: 0 0 10px #ffcc00; z-index: 5; }
+        
+        #fsToggle {
+            position: fixed; top: 15px; right: 15px;
+            width: 45px; height: 45px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            border-radius: 50%;
+            color: #0ff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; cursor: pointer; z-index: 200;
+            backdrop-filter: blur(5px); transition: 0.2s;
         }
-        #coinCount {
-            position: fixed; top: 15px; left: 15px;
-            color: #ffcc00; font-size: 24px; font-weight: bold;
-            text-shadow: 0 0 10px #ffcc00; z-index: 5;
-        }
+        #fsToggle:active { transform: scale(0.9); background: rgba(0, 255, 255, 0.3); }
 
-        /* Кнопки для телефона */
         .controls-container {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            width: 100%; max-width: 600px; height: 90px;
-            display: flex; justify-content: space-around; padding: 0 10px;
-            box-sizing: border-box; z-index: 50;
+            position: fixed; bottom: 40px; left: 0; width: 100%;
+            display: flex; justify-content: space-between; padding: 0 30px;
+            box-sizing: border-box; z-index: 50; pointer-events: none;
         }
         @media (pointer: fine) { .controls-container { display: none !important; } }
         
-        .ctrl-zone {
-            flex: 1; margin: 0 5px; background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(0, 255, 255, 0.3); border-radius: 15px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 35px; color: #0ff; backdrop-filter: blur(5px);
-        }
-
-        /* Меню */
-        #menu {
-            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: white; z-index: 100; text-align: center;
-        }
-        .btn {
-            background: #0ff; color: #000; border: none; padding: 15px 40px;
-            font-size: 20px; font-weight: bold; border-radius: 10px; cursor: pointer;
-            box-shadow: 0 0 15px #0ff; margin: 10px; width: 200px;
-        }
+        .move-group, .jump-group { display: flex; pointer-events: auto; gap: 20px; }
         
-        #skinsGrid {
-            display: none; flex-wrap: wrap; justify-content: center; gap: 10px;
-            max-width: 300px; margin: 20px 0;
+        .ctrl-zone {
+            width: 100px; height: 100px; background: rgba(0, 255, 255, 0.1);
+            border: 3px solid rgba(0, 255, 255, 0.5); border-radius: 20px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 45px; color: #0ff; backdrop-filter: blur(5px);
+            transition: all 0.1s;
         }
-        .skin-item {
-            width: 70px; height: 70px; border: 2px solid #444; border-radius: 10px;
-            cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: #111; position: relative;
-        }
+        .ctrl-zone:active { background: rgba(0, 255, 255, 0.4); transform: scale(0.9); box-shadow: 0 0 30px rgba(0, 255, 255, 0.6); }
+
+        #menu { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 100; text-align: center; }
+        .btn { background: #0ff; color: #000; border: none; padding: 15px 40px; font-size: 20px; font-weight: bold; border-radius: 10px; cursor: pointer; box-shadow: 0 0 15px #0ff; margin: 10px; width: 220px; }
+        
+        #skinsGrid { display: none; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 300px; margin: 20px 0; }
+        .skin-item { width: 70px; height: 70px; border: 2px solid #444; border-radius: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #111; }
         .skin-item.owned { border-color: #0f0; }
         .skin-item.selected { border-color: #fff; box-shadow: 0 0 10px #fff; }
         .skin-preview { width: 30px; height: 30px; margin-bottom: 5px; }
@@ -67,22 +58,26 @@
 <div id="ui">ВЫСОТА: <span id="height">0</span>m</div>
 <div id="coinCount">💰 <span id="coinsDisplay">0</span></div>
 
+<div id="fsToggle" onclick="toggleFullScreen()">⛶</div>
+
 <div id="menu">
     <h1 id="menuTitle" style="color:#0ff; margin-bottom:20px;">ALSO UP</h1>
-    
     <div id="mainButtons">
         <button class="btn" onclick="startGame()">ИГРАТЬ</button><br>
         <button class="btn" onclick="openSkins()">СКИНЫ</button>
     </div>
-
     <div id="skinsGrid"></div>
     <button id="backBtn" class="btn" style="display:none" onclick="showMain()">НАЗАД</button>
 </div>
 
 <div class="controls-container">
-    <div class="ctrl-zone" id="leftBtn">←</div>
-    <div class="ctrl-zone" id="rightBtn">→</div>
-    <div class="ctrl-zone" id="jumpBtn">↑</div>
+    <div class="move-group">
+        <div class="ctrl-zone" id="leftBtn">←</div>
+        <div class="ctrl-zone" id="rightBtn">→</div>
+    </div>
+    <div class="jump-group">
+        <div class="ctrl-zone" id="jumpBtn">↑</div>
+    </div>
 </div>
 
 <canvas id="game"></canvas>
@@ -92,25 +87,21 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const heightEl = document.getElementById('height');
 const coinsDisplay = document.getElementById('coinsDisplay');
+const fsBtn = document.getElementById('fsToggle');
 
-// Данные игрока
 let playerCoins = parseInt(localStorage.getItem('up_coins') || '0');
 let ownedSkins = JSON.parse(localStorage.getItem('up_owned') || '["#fff"]');
 let selectedColor = localStorage.getItem('up_color') || '#fff';
 
 const skins = [
-    { color: '#fff', price: 0 },
-    { color: '#ff0055', price: 15 },
-    { color: '#00ff55', price: 30 },
-    { color: '#0055ff', price: 50 },
-    { color: '#ffd700', price: 100 },
-    { color: '#a000ff', price: 150 }
+    { color: '#fff', price: 0 }, { color: '#ff0055', price: 15 },
+    { color: '#00ff55', price: 30 }, { color: '#0055ff', price: 50 },
+    { color: '#ffd700', price: 100 }, { color: '#a000ff', price: 150 }
 ];
 
-// Состояние игры
 let gameActive = false, score = 0, platforms = [], collectibleCoins = [], animationId;
-const player = { x: 0, y: 0, w: 22, h: 22, vx: 0, vy: 0, speed: 7, jump: -15, gravity: 0.55, friction: 0.85, grounded: false };
-const camera = { y: 0, lerp: 0.1 };
+const player = { x: 0, y: 0, w: 22, h: 22, vx: 0, vy: 0, speed: 8.5, jump: -15.5, gravity: 0.52, friction: 0.82, grounded: false, coyoteTimer: 0, jumpBuffer: 0 };
+const camera = { y: 0 };
 const keys = { left: false, right: false };
 
 function updateData() {
@@ -120,39 +111,52 @@ function updateData() {
     localStorage.setItem('up_color', selectedColor);
 }
 
-// Управление
+function toggleFullScreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+        fsBtn.innerText = "✕";
+    } else {
+        document.exitFullscreen();
+        fsBtn.innerText = "⛶";
+    }
+}
+
+document.addEventListener('fullscreenchange', () => {
+    fsBtn.innerText = document.fullscreenElement ? "✕" : "⛶";
+});
+
 const setupBtn = (id, act) => {
     const el = document.getElementById(id);
-    el.onmousedown = el.ontouchstart = (e) => { e.preventDefault(); act(true); };
-    el.onmouseup = el.ontouchend = (e) => { e.preventDefault(); act(false); };
+    const trigger = (e, val) => { e.preventDefault(); act(val); if(id==='jumpBtn' && val) player.jumpBuffer = 12; };
+    el.addEventListener('touchstart', (e) => trigger(e, true), {passive: false});
+    el.addEventListener('touchend', (e) => trigger(e, false), {passive: false});
+    el.addEventListener('mousedown', (e) => trigger(e, true));
+    el.addEventListener('mouseup', (e) => trigger(e, false));
 };
+
 setupBtn('leftBtn', v => keys.left = v);
 setupBtn('rightBtn', v => keys.right = v);
-setupBtn('jumpBtn', v => { if(v && player.grounded) { player.vy = player.jump; player.grounded = false; } });
+setupBtn('jumpBtn', v => {}); 
 
 window.onkeydown = (e) => {
     if(e.code === 'ArrowLeft') keys.left = true;
     if(e.code === 'ArrowRight') keys.right = true;
-    if((e.code === 'ArrowUp' || e.code === 'Space') && player.grounded) { player.vy = player.jump; player.grounded = false; }
+    if(e.code === 'ArrowUp' || e.code === 'Space') player.jumpBuffer = 12;
 };
 window.onkeyup = (e) => {
     if(e.code === 'ArrowLeft') keys.left = false;
     if(e.code === 'ArrowRight') keys.right = false;
 };
 
-// Логика игры
 function spawn() {
-    const lastY = platforms.length > 0 ? platforms[platforms.length-1].y : canvas.height;
-    const h = 110 + Math.random() * 50;
-    const w = Math.max(50, 100 - (score / 200));
-    const type = Math.random() > 0.8 ? (Math.random() > 0.5 ? 'moving' : 'disappearing') : 'static';
-    
-    let p = { x: Math.random()*(canvas.width-w), y: lastY-h, w, h: 12, type, dir: 1, speed: 2, alpha: 1, spring: Math.random() < 0.15 };
-    platforms.push(p);
-
-    if(Math.random() > 0.6) {
-        collectibleCoins.push({ x: p.x + p.w/2, y: p.y - 30, r: 8 });
-    }
+    const lastP = platforms[platforms.length - 1];
+    const lastY = lastP ? lastP.y : canvas.height;
+    const h = 100 + Math.random() * 65;
+    let type = Math.random() > 0.85 ? 'moving' : 'static';
+    const w = 85;
+    const x = Math.random() * (canvas.width - w);
+    platforms.push({ x, y: lastY - h, w, h: 12, type, dir: 1, speed: 2, spring: (type === 'static' && Math.random() < 0.12) });
+    if(Math.random() > 0.6) collectibleCoins.push({ x: x + w/2, y: lastY - h - 30, r: 8 });
 }
 
 function startGame() {
@@ -160,18 +164,16 @@ function startGame() {
     document.getElementById('menu').style.display = 'none';
     canvas.width = Math.min(window.innerWidth, 500);
     canvas.height = window.innerHeight;
-    player.x = canvas.width/2; player.y = canvas.height - 150;
+    player.x = canvas.width/2 - 11; player.y = canvas.height - 150;
     player.vx = player.vy = score = camera.y = 0;
     platforms = [{ x: 0, y: canvas.height - 40, w: canvas.width, h: 100, type: 'static' }];
     collectibleCoins = [];
-    for(let i=0; i<20; i++) spawn();
+    for(let i=0; i<15; i++) spawn();
     loop();
 }
 
 function loop() {
     if(!gameActive) return;
-    
-    // Физика
     if(keys.left) player.vx = -player.speed;
     else if(keys.right) player.vx = player.speed;
     else player.vx *= player.friction;
@@ -179,91 +181,68 @@ function loop() {
     player.vy += player.gravity;
     player.x += player.vx;
     player.y += player.vy;
-
     if(player.x < 0) player.x = 0;
     if(player.x > canvas.width - player.w) player.x = canvas.width - player.w;
 
-    player.grounded = false;
+    if (player.grounded) player.coyoteTimer = 7; else player.coyoteTimer--;
+    if (player.jumpBuffer > 0) player.jumpBuffer--;
+    if (player.jumpBuffer > 0 && player.coyoteTimer > 0) { player.vy = player.jump; player.grounded = false; player.coyoteTimer = 0; player.jumpBuffer = 0; }
+
+    let hit = false;
     if(player.vy > 0) {
         platforms.forEach(p => {
             if(player.x < p.x + p.w && player.x + player.w > p.x && player.y + player.h >= p.y && player.y + player.h <= p.y + p.h + player.vy) {
-                if(p.spring) { player.vy = player.jump * 1.8; }
-                else {
-                    player.y = p.y - player.h; player.vy = 0; player.grounded = true;
-                    if(p.type === 'disappearing') p.touched = true;
-                }
+                player.y = p.y - player.h;
+                if(p.spring) { player.vy = player.jump * 1.75; player.grounded = false; }
+                else { player.vy = 0; player.grounded = true; }
+                hit = true;
             }
         });
     }
+    if (!hit) player.grounded = false;
 
-    // Монеты
     collectibleCoins = collectibleCoins.filter(c => {
-        const dist = Math.hypot(player.x + 11 - c.x, player.y + 11 - c.y);
-        if(dist < 25) { playerCoins++; updateData(); return false; }
+        if(Math.hypot(player.x + 11 - c.x, player.y + 11 - c.y) < 25) { playerCoins++; updateData(); return false; }
         return c.y < camera.y + canvas.height + 100;
     });
 
-    platforms.forEach(p => {
-        if(p.type === 'moving') { p.x += p.dir * p.speed; if(p.x <= 0 || p.x + p.w >= canvas.width) p.dir *= -1; }
-        if(p.touched) p.alpha -= 0.05;
-    });
-
-    if(player.y < camera.y + canvas.height/2) camera.y += (player.y - canvas.height/2 - camera.y) * 0.1;
-    if(platforms[platforms.length-1].y > camera.y - 500) spawn();
-    if(player.y > camera.y + canvas.height + 100) {
-        gameActive = false;
-        document.getElementById('menu').style.display = 'flex';
-        document.getElementById('menuTitle').innerText = "ВЫСОТА: " + score + "m";
-    }
+    platforms.forEach(p => { if(p.type === 'moving') { p.x += p.dir * p.speed; if(p.x <= 0 || p.x + p.w >= canvas.width) p.dir *= -1; } });
+    if(player.y < camera.y + canvas.height/2) camera.y += (player.y - canvas.height/2 - camera.y) * 0.15;
+    if(platforms[platforms.length-1].y > camera.y - 600) spawn();
+    if(player.y > camera.y + canvas.height + 100) { gameActive = false; document.getElementById('menu').style.display = 'flex'; }
 
     score = Math.max(score, Math.floor((canvas.height - 150 - player.y)/10));
     heightEl.innerText = score;
 
-    // Отрисовка
     ctx.fillStyle = '#020205'; ctx.fillRect(0,0,canvas.width, canvas.height);
     ctx.save(); ctx.translate(0, -camera.y);
-    
     platforms.forEach(p => {
-        if(p.alpha <= 0) return;
-        ctx.fillStyle = p.type === 'static' ? '#0ff' : (p.type === 'moving' ? '#ff0' : `rgba(255,0,85,${p.alpha})`);
+        ctx.fillStyle = p.type === 'static' ? '#0ff' : '#ff0';
         ctx.fillRect(p.x, p.y, p.w, p.h);
-        if(p.spring) { ctx.fillStyle = '#0f8'; ctx.fillRect(p.x + p.w/2 - 10, p.y - 8, 20, 8); }
+        if(p.spring) { ctx.fillStyle = '#0f8'; ctx.fillRect(p.x + p.w/2 - 10, p.y - 6, 20, 6); }
     });
-
-    collectibleCoins.forEach(c => {
-        ctx.fillStyle = '#ffcc00'; ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI*2); ctx.fill();
-    });
-
+    collectibleCoins.forEach(c => { ctx.fillStyle = '#ffcc00'; ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI*2); ctx.fill(); });
     ctx.fillStyle = selectedColor; ctx.shadowBlur = 15; ctx.shadowColor = selectedColor;
     ctx.fillRect(player.x, player.y, player.w, player.h);
     ctx.restore();
-
-    animationId = requestAnimationFrame(loop);
+    if(gameActive) animationId = requestAnimationFrame(loop);
 }
 
-// Функции меню
 function openSkins() {
     document.getElementById('mainButtons').style.display = 'none';
     const grid = document.getElementById('skinsGrid');
     grid.style.display = 'flex';
     document.getElementById('backBtn').style.display = 'block';
     grid.innerHTML = '';
-    
     skins.forEach(s => {
         const isOwned = ownedSkins.includes(s.color);
         const div = document.createElement('div');
         div.className = `skin-item ${isOwned ? 'owned' : ''} ${selectedColor === s.color ? 'selected' : ''}`;
-        div.innerHTML = `<div class="skin-preview" style="background:${s.color}"></div>
-                         <div class="price">${isOwned ? 'OK' : s.price}</div>`;
+        div.innerHTML = `<div class="skin-preview" style="background:${s.color}"></div><div class="price">${isOwned ? 'OK' : s.price}</div>`;
         div.onclick = () => {
-            if(isOwned) { selectedColor = s.color; }
-            else if(playerCoins >= s.price) {
-                playerCoins -= s.price;
-                ownedSkins.push(s.color);
-                selectedColor = s.color;
-            }
-            updateData();
-            openSkins();
+            if(isOwned) selectedColor = s.color;
+            else if(playerCoins >= s.price) { playerCoins -= s.price; ownedSkins.push(s.color); selectedColor = s.color; }
+            updateData(); openSkins();
         };
         grid.appendChild(div);
     });
@@ -273,9 +252,7 @@ function showMain() {
     document.getElementById('mainButtons').style.display = 'block';
     document.getElementById('skinsGrid').style.display = 'none';
     document.getElementById('backBtn').style.display = 'none';
-    document.getElementById('menuTitle').innerText = "ALSO UP";
 }
-
 updateData();
 </script>
 </body>
